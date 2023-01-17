@@ -10,7 +10,8 @@ from selenium.webdriver.common.by import By
 import pymysql
 
 # 데이터베이스 접속
-conn = pymysql.connect(host='127.0.0.1', 
+conn = pymysql.connect(host='127.0.0.1',
+                        port=3307,
                         user='root', 
                         password='1234', 
                         db='java2db', 
@@ -18,10 +19,6 @@ conn = pymysql.connect(host='127.0.0.1',
 
 # SQL 실행객체
 cur = conn.cursor()
-
-
-
-
 
 # 가상 브라우저 실행
 chrome_options = Options()
@@ -34,32 +31,30 @@ browser.get('https://www.weather.go.kr/w/obs-climate/land/city-obs.do')
 # 지역명 출력
 trs = browser.find_elements(By.CSS_SELECTOR, "#weather_table > tbody > tr")
 
-# SQL 실행
-sql = "INSERT INTO `weather` VALUES "
+# 추가할 전제 행을 넣을 리스트 
+rows = [] 
 
-
-list = []
 for tr in trs:
     tds = tr.find_elements(By.CSS_SELECTOR , 'td')
+    
+    # td태그의 text가 공백이면 null 처리
+    str = list(
+                map(
+                    lambda td: 'null'   
+                                if td.text.isspace()  
+                                else "'%s'" % (td.text)
+                                , tds
+                )
+            ) 
 
-    str = "("
-    for i in range(13):
-        if i == 12: 
-            str += "\'" + tds[i].text + "\', NOW())"
-            break
+    #  SQL문에 추가할 하나의 value로 작성
+    row = "(%s, NOW())" % (",".join(str))
 
-        str += 'null' if tds[i].text == " " else "\'" + tds[i].text + "\'"
-        str += ','
-    list.append(str)
+    # 행 추가
+    rows.append(row)
 
-
-
-result = ",".join(list)
-
-
-sql += result
-print(sql)
-cur.execute(sql)
+# SQL 실행
+cur.execute("INSERT INTO `weather` VALUES " + ",".join(rows))
 conn.commit()
 
 # 가상 브라우저 종료
