@@ -37,13 +37,13 @@ rows = []
 for tr in trs:
     tds = tr.find_elements(By.CSS_SELECTOR , 'td')
     
-    # td태그의 text가 공백이면 null 처리
+    # td태그의 text가 공백이면 null 처리후 list객체로 반환
     str = list(
                 map(
-                    lambda td: 'null'   
-                                if td.text.isspace()  
-                                else "'%s'" % (td.text)
-                                , tds
+                    lambda td: 'null'                     # 참 = null
+                                if td.text.isspace()      # td.text가 공백이면
+                                else "'%s'" % (td.text)   # 거짓 = 'td.text'  
+                                , tds                     # 배열 객체
                 )
             ) 
 
