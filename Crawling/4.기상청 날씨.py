@@ -39,15 +39,13 @@ for tr in trs:
     
     # td태그의 text가 공백이면 null 처리후 list객체로 반환
     str = list(
-                map(
-                    lambda td: 'null'                     # 참 = null
+                map(lambda td: 'null'                     # 참 = null
                                 if td.text.isspace()      # td.text가 공백이면
-                                else "'%s'" % (td.text)   # 거짓 = 'td.text'  
-                                , tds                     # 배열 객체
-                )
-            ) 
+                                else "'%s'" % (td.text)   # 거짓 = 'td.text' 
+                                , tds)                     # 배열 객체
+    )
 
-    #  SQL문에 추가할 하나의 value로 작성
+    #  SQL문에 추가할 value로 작성 (col1, col2, co13, ....col14, NOW())
     row = "(%s, NOW())" % (",".join(str))
 
     # 행 추가
