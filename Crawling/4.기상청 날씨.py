@@ -11,7 +11,7 @@ import pymysql
 
 # 데이터베이스 접속
 conn = pymysql.connect(host='127.0.0.1',
-                        port=3307,
+                        port=3306,
                         user='root', 
                         password='1234', 
                         db='java2db', 
