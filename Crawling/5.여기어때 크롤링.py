@@ -180,7 +180,7 @@ sheet = workbook["숙소"]
 sheet.append([
             'acc_id', 'userId_id', 'acc_name', 'accType_no', 'province_no', 'acc_city', 'acc_zip', 
             'acc_addr', 'acc_addrDetail', 'acc_longtitude', 'acc_lattitude', 'acc_info', 
-            'acc_comment', 'acc_thumbs', 'acc_checkIn', 'acc_checkOut'
+            'acc_comment', 'acc_thumbs', 'acc_checkIn', 'acc_checkOut', 'mainTxt', 'sc_no'
             ])
 
 sheet = workbook["객실"]
@@ -192,34 +192,49 @@ chrome_options = Options()
 chrome_options.add_experimental_option("detach", True)
 browser = webdriver.Chrome('./chromedriver.exe', options=chrome_options)
 
-citys = ['경상북도', '경기도', '충청북도', '충청남도', '강원도', '제주도', '전라북도', '전라남도'
+citys = ['경상남도', '경상북도', '경기도', '충청북도', '충청남도', '강원도', '제주도', '전라북도', '전라남도'
         , '서울', '인천', '광주', '대전', '대구', '울산', '부산']
 # citys = ['경상남도']
+shortCitys = ['경남', '경북', '경기', '충북','충남','강원','제주', '전북', '전남','서울','인천','광주'
+                ,'대전', '대구', '울산', '부산']
 
 # 모텔, 호텔, 펜션, 캠핑, 게스트하우스
 cates = [1, 2, 3, 5, 6]
 
-acc = []
-AccCnt = 344
-roomCnt = 2984
-for city in citys:
+
+AccCnt = 1
+roomCnt = 1
+for c, city in enumerate(citys):
     for cate in cates:
         # 여기어때 검색 페이지 이동
         search = 'https://www.goodchoice.kr/product/result?keyword={}&adcno%5B%5D={}&sel_date=2023-03-30&sel_date2=2023-03-31'.format(city, cate)
         browser.get(search)
 
+        html = browser.page_source
+        soup = bs(html, 'html.parser')
+
         # 검색된 숙소 리스트
-        lists = browser.find_elements(By.CSS_SELECTOR, "#poduct_list_area > ul > li")
+        lists = soup.select("#poduct_list_area > ul > li")
 
         # 상세보기 페이지 링크를 저장할 배열 선언
         links = []
         print('갯수',len(lists))
 
         # 배열에 링크 주소 값 저장
-        for list in lists:
-            a = list.find_element(By.CSS_SELECTOR , 'a')
-            links.append(a.get_attribute('href'))
-
+        accs = []
+        for index, list in enumerate(lists):
+            acc = {}
+            a = list.select_one('a')
+            mainImg = list.select_one('img.lazy')
+            mainTxt = []
+            mainTxts = list.find('p', class_='score').next_siblings
+            for m in mainTxts:
+                if shortCitys[c] not in m.text:
+                    mainTxt.append(m.text.replace("\n", "").replace(" ", ""))
+            links.append(a['href'])
+            acc['img'] = mainImg['data-original']
+            acc['mainTxt'] = '/'.join([i for i in mainTxt if i not in {''}])
+            accs.append(acc)
         # 검색 페이지 닫기
         browser.close
 
@@ -244,10 +259,14 @@ for city in citys:
                 except Exception as e:
                     comment = ""
 
+                print(comment)
                 
                 browser.find_element(By.CSS_SELECTOR , '#content > div.tab > button:nth-child(2)').click()
                 acc_info = browser.find_element(By.CSS_SELECTOR , '#content > article.detail_info.on > section.default_info').text
                 
+                browser.find_element(By.CSS_SELECTOR , '#content > article.detail_info.on > button:nth-child(3)').click()
+                serviceRegInfo = browser.find_element(By.CSS_SELECTOR , '#content > article.detail_info.on > section.service > ul > li').get_attribute('class')
+                print(serviceRegInfo)
             
                 sellerInfo = browser.find_element(By.CSS_SELECTOR , '#content section.seller_info').get_attribute('textContent')
                 images = browser.find_elements(By.CSS_SELECTOR , '#content > div.top > div.left > div.gallery_pc > div > ul > li.swiper-slide > img')
@@ -279,11 +298,14 @@ for city in citys:
             content['acc_longtitude'] = acc_longtitude            # 경도
             content['acc_lattitude'] = acc_lattitude              # 위도
             content['acc_info'] = remove_html(acc_info)           # 기본 정보
-            content['comment'] = remove_html(comment)             # 사장님 한마디
+            content['acc_comment'] = remove_html(comment)             # 사장님 한마디
             content['acc_checkIn'] = "14:00"                      # 체크인 시간
             content['acc_checkOut'] = "12:00"                     # 체크아웃 시간
             acc_thumbs = get_imgArrStr(images, content.get('province_no'), content.get('acc_id'))  # 썸네일들
             if(acc_thumbs != None):
+                name = uuid.uuid1()
+                urlretrieve('http:{}'.format(accs[index].get('img')), 'C:/Users/ooo33.DESKTOP-56U45AS/Desktop/img/{}/{}/{}{}'.format(content.get('province_no'), content.get('acc_id'), name, '.jpg'))
+                acc_thumbs = '{}/{}'.format(accs[index].get('img'), acc_thumbs)
                 content['acc_thumbs'] = acc_thumbs
             else:
                 continue
@@ -301,7 +323,7 @@ for city in citys:
                         content.get('province_no'), content.get('acc_city'), content.get('acc_zip'), content.get('acc_addr'),  
                         content.get('acc_addrDetail'), content.get('acc_longtitude'), content.get('acc_lattitude'),
                         content.get('acc_info'), content.get('acc_comment'), content.get('acc_thumbs'), content.get('acc_checkIn'),
-                        content.get('acc_checkOut')
+                        content.get('acc_checkOut'), accs[index].get('mainTxt')
                         ])
 
             # 숙소 객실 정보
@@ -366,18 +388,16 @@ for city in citys:
                     roomInfo.get('room_id'), content.get('acc_id'), roomInfo.get('room_name'), roomInfo.get('room_stock'), 
                     roomInfo.get('room_price'), roomInfo.get('room_info'), roomInfo.get('room_thumb'), roomInfo.get('room_checkIn'), roomInfo.get('room_checkOut')
                 ])
-                
-            content['roomList'] = roomList   # 객실 리스트 저장
-            
 
-            #숙소들의 변수를 모은 변수에 저장
-            acc.append(content)
+                if(j == 4):
+                    break
+            
 
             browser.close
 
             AccCnt = AccCnt + 1
-            # if(index == 1):
-            #     break
+            if(index == 0):
+                break
 
 workbook.save('C:/Users/ooo33.DESKTOP-56U45AS/Desktop/lemoDB2.xlsx')
 workbook.close()

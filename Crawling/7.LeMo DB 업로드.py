@@ -41,29 +41,27 @@ for row in rows:
         rowList.append(str(cell.value).replace("'", ""))
     rowsList.append(rowList)
 
-# lemo_member_userId(회원 아이디) INSERT SQL문
-userId_sql = "INSERT INTO `lemo_member_userId` (`userId_id`, `userId_nick`, `userId_type`) VALUES"
-userIdList = []
+# lemo_member_userInfo(회원정보) INSERT SQL문
+userInfo_sql = "INSERT INTO `lemo_member_userInfo` (`user_id`, `hp`, `nick`, `type`, `role`, `regip`) VALUES"
+userInfoList = []
 
 # lemo_member_user(회원) INSERT SQL문
-user_sql = "INSERT INTO `lemo_member_user` (`userId_id`, `user_pass`, `user_hp`, `user_hp_certi`, `user_role`, `user_regip`, `user_rdate`) VALUES"
+user_sql = "INSERT INTO `lemo_member_user` (`user_id`, `pass`) VALUES"
 userList = []
 
 # lemo_member_businessInfo(비즈니스 정보) INSERT SQL문
-businessInfo_sql = "INSERT INTO `lemo_member_businessInfo` (`userId_id`, `bis_company`, `bis_ceo`, `bis_openDate`, `bis_bizRegNum`, `bis_tel`, `bis_zip`, `bis_addr`, `bis_addrDetail`) VALUES"
+businessInfo_sql = "INSERT INTO `lemo_member_businessInfo` (`user_id`, `bis_company`, `bis_ceo`, `bis_openDate`, `bis_bizRegNum`, `bis_tel`, `bis_zip`, `bis_addr`, `bis_addrDetail`) VALUES"
 businessInfoList = []
 
 
 userId_id_list = []
 for index, row in enumerate(rowsList):
-    userId_id = str(index) + row[0] if (index < 343) else row[0]
-    userId_nick = row[1]
-    userId_type = str(1)
-    user_hp = row[3].replace("-", "")[:8] + str(randrange(10)) + str(index).zfill(4)[:4]
-    user_hp_certi = "1"
-    user_role = "BUSINESS"
-    user_regip = "0:0:0:0:0:0:0:1"
-    user_rdate = "NOW()"
+    user_id = str(index) + row[0] if (index < 343) else row[0]
+    nick = row[1]
+    type = str(1)
+    hp = row[3].replace("-", "")[:8] + str(randrange(10)) + str(index).zfill(4)[:4]
+    role = "BUSINESS"
+    regip = "0:0:0:0:0:0:0:1"
     bis_company = row[4]
     bis_ceo = row[5]
     bis_openDate = row[6]
@@ -72,42 +70,40 @@ for index, row in enumerate(rowsList):
     bis_addr = row[10]
     bis_addrDetail = row[11]
 
-    userId_id_list.append(userId_id)
+    userId_id_list.append(user_id)
 
-    userId_values = []
-    userId_values.insert(0, "'" + userId_id + "'")
-    userId_values.insert(1, "'" + userId_nick + "'")
-    userId_values.insert(2, "'" + userId_type + "'")
-    userIdList.append('({})'.format(','.join(userId_values)))
+    userInfo_values = []
+    userInfo_values.insert(0, "'" + user_id + "'")
+    userInfo_values.insert(1, "'" + hp + "'")
+    userInfo_values.insert(2, "'" + nick + "'")
+    userInfo_values.insert(3, "'" + type + "'")
+    userInfo_values.insert(4, "'" + role + "'")
+    userInfo_values.insert(5, "'" + regip + "'")
+    userInfoList.append('({})'.format(','.join(userInfo_values)))
 
     user_vlaues = []
-    user_vlaues.insert(0, "'" + userId_id + "'")
+    user_vlaues.insert(0, "'" + user_id + "'")
     user_vlaues.insert(1, "'" + "1234" + "'")
-    user_vlaues.insert(2, "'" + user_hp + "'")
-    user_vlaues.insert(3, "'" + user_hp_certi + "'")
-    user_vlaues.insert(4, "'" + user_role + "'")
-    user_vlaues.insert(5, "'" + user_regip + "'")
-    user_vlaues.insert(6, user_rdate)
     userList.append('({})'.format(','.join(user_vlaues)))
 
     businessInfoList_vlaues = []
-    businessInfoList_vlaues.insert(0, "'" + userId_id + "'")
+    businessInfoList_vlaues.insert(0, "'" + user_id + "'")
     businessInfoList_vlaues.insert(1, "'" + bis_company + "'")
     businessInfoList_vlaues.insert(2, "'" + bis_ceo + "'")
     businessInfoList_vlaues.insert(3, "'" + bis_openDate + "'")
     businessInfoList_vlaues.insert(4, "'" + bis_bizRegNum + "'")
-    businessInfoList_vlaues.insert(5, "'" + user_hp + "'")
+    businessInfoList_vlaues.insert(5, "'" + hp + "'")
     businessInfoList_vlaues.insert(6, "'" + bis_zip + "'")
     businessInfoList_vlaues.insert(7, "'" + bis_addr + "'")
     businessInfoList_vlaues.insert(8, "'" + bis_addrDetail + "'")
     businessInfoList.append('({})'.format(','.join(businessInfoList_vlaues)))
     
-userId_sql = userId_sql + ','.join(userIdList)
+userInfo_sql = userInfo_sql + ','.join(userInfoList)
 user_sql = user_sql + ','.join(userList)
 businessInfo_sql = businessInfo_sql + ','.join(businessInfoList)
 
 # SQL 실행
-cur.execute(userId_sql)
+cur.execute(userInfo_sql)
 conn.commit()
 cur.execute(user_sql)
 conn.commit()
@@ -128,7 +124,7 @@ for row in rows:
     rowsList.append(rowList)
 
 # lemo_product_accommodation(숙소) INSERT SQL문
-acc_sql = "INSERT INTO `lemo_product_accommodation` (`acc_id`, `userId_id`, `acc_name`, `accType_no`, `province_no`, `acc_city`, "
+acc_sql = "INSERT INTO `lemo_product_accommodation` (`acc_id`, `user_id`, `acc_name`, `accType_no`, `province_no`, `acc_city`, "
 acc_sql = acc_sql + "`acc_zip`, `acc_addr`, `acc_addrDetail`, `acc_longtitude`, `acc_lattitude`, `acc_xy`, `acc_info`, `acc_comment`," 
 acc_sql = acc_sql + "`acc_thumbs`, `acc_checkIn`, `acc_checkOut`) VALUES"
 
