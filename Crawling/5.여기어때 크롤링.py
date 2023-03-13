@@ -139,11 +139,11 @@ def get_sellerInfo(sellerInfo, n):
         if "주소" in info:
             list['addr']= sellerInfo[index+1]
         if "전화번호" in info:
-            list['tel']= sellerInfo[index+1]
+            list['tel']= sellerInfo[index+1].replace("-", "")
         if "이메일" in info:
             list['userId_id']= str(n) + sellerInfo[index+1] 
         if "사업자번호" in info:
-            list['bis_bizRegNum']= sellerInfo[index+1]
+            list['bis_bizRegNum']= sellerInfo[index+1].replace("-", "")
         if list.get('userId_id') == None:
             list['userId_id'] = '{}{}@naver.com'.format("b", n+100)
 
@@ -166,6 +166,7 @@ workbook = Workbook()
 
 workbook.create_sheet('숙소')
 workbook.create_sheet('객실')
+workbook.create_sheet('편의시설')
 
 # 첫번째 시트 활성화
 sheet = workbook.active
@@ -186,6 +187,9 @@ sheet.append([
 sheet = workbook["객실"]
 sheet.append(['room_id', 'acc_id', 'room_name', 'room_stock', 'room_price', 'room_info', 'room_thumb', 'room_checkIn', 'room_checkOut'])
 
+sheet = workbook["편의시설"]
+sheet.append(['sc_no', 'sc_name'])
+
 
 # 가상 브라우저 실행
 chrome_options = Options()
@@ -201,6 +205,10 @@ shortCitys = ['경남', '경북', '경기', '충북','충남','강원','제주',
 # 모텔, 호텔, 펜션, 캠핑, 게스트하우스
 cates = [1, 2, 3, 5, 6]
 
+# cates = [1, 2]
+
+# 편의시설 및 서비스 정보
+serviceCateMap = {} 
 
 AccCnt = 1
 roomCnt = 1
@@ -258,16 +266,26 @@ for c, city in enumerate(citys):
                     comment = browser.find_element(By.CSS_SELECTOR , '#content > div.top > div.right > div.comment > div').text
                 except Exception as e:
                     comment = ""
-
-                print(comment)
                 
                 browser.find_element(By.CSS_SELECTOR , '#content > div.tab > button:nth-child(2)').click()
                 acc_info = browser.find_element(By.CSS_SELECTOR , '#content > article.detail_info.on > section.default_info').text
                 
-                browser.find_element(By.CSS_SELECTOR , '#content > article.detail_info.on > button:nth-child(3)').click()
-                serviceRegInfo = browser.find_element(By.CSS_SELECTOR , '#content > article.detail_info.on > section.service > ul > li').get_attribute('class')
-                print(serviceRegInfo)
-            
+                servicecate = ""
+
+                if(cate == 1):
+                    servicecate = browser.find_elements(By.CSS_SELECTOR , '#content > article.detail_info.on > section.theme > ul > li > p.title')
+                else:
+                    servicecate = browser.find_elements(By.CSS_SELECTOR , '#content > article.detail_info.on > section.service > ul > li')
+                
+                sc_noList = []
+                for s in servicecate: 
+                    sc_no = re.sub(r'[^0-9]', '', s.get_attribute('class'))
+                    sc_name = s.get_attribute('textContent')
+                    sc_noList.append(sc_no)
+                    serviceCateMap[sc_no] = sc_name
+                content['sc_no'] = "/".join(sc_noList)
+                print(content.get('sc_no'))
+
                 sellerInfo = browser.find_element(By.CSS_SELECTOR , '#content section.seller_info').get_attribute('textContent')
                 images = browser.find_elements(By.CSS_SELECTOR , '#content > div.top > div.left > div.gallery_pc > div > ul > li.swiper-slide > img')
             except:
@@ -304,8 +322,9 @@ for c, city in enumerate(citys):
             acc_thumbs = get_imgArrStr(images, content.get('province_no'), content.get('acc_id'))  # 썸네일들
             if(acc_thumbs != None):
                 name = uuid.uuid1()
+                
                 urlretrieve('http:{}'.format(accs[index].get('img')), 'C:/Users/ooo33.DESKTOP-56U45AS/Desktop/img/{}/{}/{}{}'.format(content.get('province_no'), content.get('acc_id'), name, '.jpg'))
-                acc_thumbs = '{}/{}'.format(accs[index].get('img'), acc_thumbs)
+                acc_thumbs = '{}/{}'.format(str(name) + ".jpg", acc_thumbs)
                 content['acc_thumbs'] = acc_thumbs
             else:
                 continue
@@ -323,7 +342,7 @@ for c, city in enumerate(citys):
                         content.get('province_no'), content.get('acc_city'), content.get('acc_zip'), content.get('acc_addr'),  
                         content.get('acc_addrDetail'), content.get('acc_longtitude'), content.get('acc_lattitude'),
                         content.get('acc_info'), content.get('acc_comment'), content.get('acc_thumbs'), content.get('acc_checkIn'),
-                        content.get('acc_checkOut'), accs[index].get('mainTxt')
+                        content.get('acc_checkOut'), accs[index].get('mainTxt'), content.get('sc_no')
                         ])
 
             # 숙소 객실 정보
@@ -389,15 +408,22 @@ for c, city in enumerate(citys):
                     roomInfo.get('room_price'), roomInfo.get('room_info'), roomInfo.get('room_thumb'), roomInfo.get('room_checkIn'), roomInfo.get('room_checkOut')
                 ])
 
-                if(j == 4):
+                # 객실은 4개까지만
+                if(j == 3):
                     break
             
 
             browser.close
 
             AccCnt = AccCnt + 1
-            if(index == 0):
-                break
+            # if(index == 1):
+            #     break
+        
 
-workbook.save('C:/Users/ooo33.DESKTOP-56U45AS/Desktop/lemoDB2.xlsx')
+#편의시설 및 서비스 정보 저장
+sheet = workbook["편의시설"]
+
+for i in serviceCateMap.keys():
+    sheet.append([i, serviceCateMap[i]])
+workbook.save('C:/Users/ooo33.DESKTOP-56U45AS/Desktop/lemoDB3.xlsx')
 workbook.close()
