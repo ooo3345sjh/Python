@@ -16,14 +16,14 @@ conn = pymysql.connect(host='127.0.0.1',
                         user='root', 
                         password='1234', 
                         db='lemo', 
-                        port=3307,
+                        port=3306,
                         charset='utf8')
 
 # SQL 실행객체
 cur = conn.cursor()
 
 # 1. 불러올 파일의 위치 지정
-filename = 'C:/Users/ooo33.DESKTOP-56U45AS/Desktop/lemoDB/lemoDB.xlsx'
+filename = 'C:/Users/java2/Desktop/lemoDB.xlsx'
 
 # 2. openpyxl을 통해서 엑셀파일을 열기
 wb = load_workbook(filename, data_only=True)
@@ -31,7 +31,7 @@ wb = load_workbook(filename, data_only=True)
 # 3. 불러온 Workbook의 sheet확인
 sellerList = wb['판매자']
 
-rows = sellerList['A2':'L4557']
+rows = sellerList['A2':'L4584']
 
 rowsList = []
 
@@ -56,7 +56,7 @@ businessInfoList = []
 
 userId_id_list = []
 for index, row in enumerate(rowsList):
-    user_id = str(index) + row[0] if (index < 343) else row[0]
+    user_id = row[0]
     nick = row[1]
     type = str(1)
     hp = row[3].replace("-", "")[:8] + str(randrange(10)) + str(index).zfill(4)[:4]
@@ -111,9 +111,41 @@ cur.execute(businessInfo_sql)
 conn.commit()
 
 # 3. 불러온 Workbook의 sheet확인
+accommodation = wb['편의시설']
+rows = accommodation['A2':'B193']
+
+rowsList = []
+
+for row in rows:
+    rowList = []
+    for cell in  row:
+        rowList.append(str(cell.value).replace("'", ""))
+    rowsList.append(rowList)
+
+# lemo_product_servicecate(편의시설및서비스카테고리) INSERT SQL문
+servicecate_sql = "INSERT INTO `lemo_product_servicecate` (`sc_no`, `sc_name`) VALUES"
+
+scList = []
+for index, row in enumerate(rowsList):
+    sc_no = row[0]
+    sc_name = row[1]
+    sc_values = []
+    sc_values.insert(0, "'" + sc_no + "'")
+    sc_values.insert(1, "'" + sc_name + "'")
+    scList.append('({})'.format(','.join(sc_values)))
+
+servicecate_sql = servicecate_sql + ','.join(scList)
+
+# SQL 실행
+cur.execute(servicecate_sql)
+conn.commit()
+
+
+
+# 3. 불러온 Workbook의 sheet확인
 accommodation = wb['숙소']
 
-rows = accommodation['A2':'P4557']
+rows = accommodation['A2':'R4584']
 
 rowsList = []
 
@@ -125,7 +157,7 @@ for row in rows:
 
 # lemo_product_accommodation(숙소) INSERT SQL문
 acc_sql = "INSERT INTO `lemo_product_accommodation` (`acc_id`, `user_id`, `acc_name`, `accType_no`, `province_no`, `acc_city`, "
-acc_sql = acc_sql + "`acc_zip`, `acc_addr`, `acc_addrDetail`, `acc_longtitude`, `acc_lattitude`, `acc_xy`, `acc_info`, `acc_comment`," 
+acc_sql = acc_sql + "`acc_zip`, `acc_addr`, `acc_addrDetail`, `acc_longtitude`, `acc_lattitude`, `acc_xy`, `acc_mainInfo`,`acc_info`, `acc_comment`," 
 acc_sql = acc_sql + "`acc_thumbs`, `acc_checkIn`, `acc_checkOut`) VALUES"
 
 accList = []
@@ -147,6 +179,19 @@ for index, row in enumerate(rowsList):
     acc_thumbs = row[13]
     acc_checkIn = row[14]
     acc_checkOut = row[15]
+    acc_mainInfo = row[16]
+    acc_sc_no = row[17].split("/")
+
+    # sql_servicecate = "INSERT INTO `lemo_product_servicecate` VALUES "
+    # sc_valuse = []
+    # for no in acc_sc_no:
+        
+        
+    # accList.append('({})'.format(','.join(accList_vlaues)))
+    # # SQL 실행
+    # cur.execute(sql_servicecate)
+    # conn.commit()
+
 
     accList_vlaues = []
     accList_vlaues.insert(0, "'" + acc_id + "'")
@@ -161,11 +206,12 @@ for index, row in enumerate(rowsList):
     accList_vlaues.insert(9, "'" + acc_longtitude + "'")
     accList_vlaues.insert(10, "'" + acc_lattitude + "'")
     accList_vlaues.insert(11, acc_xy)
-    accList_vlaues.insert(12, "'" + acc_info + "'")
-    accList_vlaues.insert(13, "'" + acc_comment + "'")
-    accList_vlaues.insert(14, "'" + acc_thumbs + "'")
-    accList_vlaues.insert(15, "'" + acc_checkIn + "'")
-    accList_vlaues.insert(16, "'" + acc_checkOut + "'")
+    accList_vlaues.insert(12, "'" + acc_mainInfo + "'")
+    accList_vlaues.insert(13, "'" + acc_info + "'")
+    accList_vlaues.insert(14, "'" + acc_comment + "'")
+    accList_vlaues.insert(15, "'" + acc_thumbs + "'")
+    accList_vlaues.insert(16, "'" + acc_checkIn + "'")
+    accList_vlaues.insert(17, "'" + acc_checkOut + "'")
 
     accList.append('({})'.format(','.join(accList_vlaues)))
 
