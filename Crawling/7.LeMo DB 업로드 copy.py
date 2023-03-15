@@ -16,14 +16,14 @@ conn = pymysql.connect(host='127.0.0.1',
                         user='root', 
                         password='1234', 
                         db='lemo', 
-                        port=3306,
+                        port=3307,
                         charset='utf8')
 
 # SQL 실행객체
 cur = conn.cursor()
 
 # 1. 불러올 파일의 위치 지정
-filename = 'C:/Users/java2/Desktop/lemoDB.xlsx'
+filename = 'C:/Users/ooo33.DESKTOP-56U45AS/Desktop/lemoDB2.xlsx'
 
 # 2. openpyxl을 통해서 엑셀파일을 열기
 wb = load_workbook(filename, data_only=True)
@@ -122,25 +122,6 @@ for row in rows:
         rowList.append(str(cell.value).replace("'", ""))
     rowsList.append(rowList)
 
-# lemo_product_servicecate(편의시설및서비스카테고리) INSERT SQL문
-servicecate_sql = "INSERT INTO `lemo_product_servicecate` (`sc_no`, `sc_name`) VALUES"
-
-scList = []
-for index, row in enumerate(rowsList):
-    sc_no = row[0]
-    sc_name = row[1]
-    sc_values = []
-    sc_values.insert(0, "'" + sc_no + "'")
-    sc_values.insert(1, "'" + sc_name + "'")
-    scList.append('({})'.format(','.join(sc_values)))
-
-servicecate_sql = servicecate_sql + ','.join(scList)
-
-# SQL 실행
-cur.execute(servicecate_sql)
-conn.commit()
-
-
 
 # 3. 불러온 Workbook의 sheet확인
 accommodation = wb['숙소']
@@ -163,6 +144,7 @@ acc_sql = acc_sql + "`acc_thumbs`, `acc_checkIn`, `acc_checkOut`) VALUES"
 accList = []
 for index, row in enumerate(rowsList):
     acc_id = row[0]
+    accId = acc_id
     userId_id = userId_id_list[index]
     acc_name = row[2]
     accType_no = row[3]
@@ -180,18 +162,6 @@ for index, row in enumerate(rowsList):
     acc_checkIn = row[14]
     acc_checkOut = row[15]
     acc_mainInfo = row[16]
-    acc_sc_no = row[17].split("/")
-
-    # sql_servicecate = "INSERT INTO `lemo_product_servicecate` VALUES "
-    # sc_valuse = []
-    # for no in acc_sc_no:
-        
-        
-    # accList.append('({})'.format(','.join(accList_vlaues)))
-    # # SQL 실행
-    # cur.execute(sql_servicecate)
-    # conn.commit()
-
 
     accList_vlaues = []
     accList_vlaues.insert(0, "'" + acc_id + "'")
@@ -221,10 +191,31 @@ acc_sql = acc_sql + ','.join(accList)
 cur.execute(acc_sql)
 conn.commit()
 
+# lemo_product_servicereginfo(편의시설 서비스 등록정보) INSERT SQL문
+scInfo_List = []
+servicecateInfo_sql = "INSERT INTO `lemo_product_servicereginfo` (`sc_no`, `acc_id`) VALUES"
+for index, row in enumerate(rowsList):
+    acc_id = row[0]
+    scNo_List = None if row[17] == 'None' else row[17].split("/")
+    if scNo_List != None:
+        for no in scNo_List:
+            if int(no) <= 85:
+                sc_no = no
+                scInfo_values = []
+                scInfo_values.insert(0, "'" + sc_no + "'")
+                scInfo_values.insert(1, "'" + acc_id + "'")
+                scInfo_List.append('({})'.format(','.join(scInfo_values)))
+print(scInfo_List)
+servicecateInfo_sql = servicecateInfo_sql + ','.join(scInfo_List)
+
+# SQL 실행
+cur.execute(servicecateInfo_sql)
+conn.commit()
+
 # 3. 불러온 Workbook의 sheet확인
 accommodation = wb['객실']
 
-rows = accommodation['A2':'I38007']
+rows = accommodation['A2':'I16537']
 
 rowsList = []
 
